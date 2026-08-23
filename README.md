@@ -69,5 +69,5 @@ npm test
 - `state` ve `son` en fazla 500 kayıt tutar, en eskisi düşer (`koy()` / [cekilis.js](cekilis.js)).
 - Bir panelde en fazla 25 kişi seçilebilir (Discord user select limiti); isimle eklemede sınır yok
   ama ilk 10'u buton olarak, kalanı metin olarak görünür.
-- Bot 2 saat işlem görmezse "görünmez" olur — bağlantı sürer, komutlar çalışır, sadece üye
+- Bot 1 saat işlem görmezse "görünmez" olur — bağlantı sürer, komutlar çalışır, sadece üye
   listesinde görünmez. İlk komutta çevrim içine döner.

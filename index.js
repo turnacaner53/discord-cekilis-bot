@@ -107,7 +107,7 @@ const isimModal = (s) =>
         ),
     );
 
-const UYKU = 2 * 60 * 60 * 1000; // 4 saat işlem olmazsa görünmez
+const UYKU = 60 * 60 * 1000; // 1 saat işlem olmazsa görünmez
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
