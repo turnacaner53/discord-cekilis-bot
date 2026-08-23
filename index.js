@@ -14,13 +14,14 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { cek, isimleriAyikla } from './cekilis.js';
+import { cek, isimleriAyikla, koy } from './cekilis.js';
 
 const MAX = 25; // Discord'un user select limiti
 const CHIP = 10; // 5 satır sınırı: 2 select + 2 chip satırı + 1 kontrol satırı
 
 // ponytail: panel durumu bellekte; bot yeniden başlarsa /cekilis ile panel yeniden açılır.
-const state = new Map(); // messageId -> { users, adet, isimler }
+// ponytail: koy() kaba LRU ile sınırlar (varsayılan 500) — halka açık botta Map'ler sonsuz büyümesin.
+const state = new Map(); // messageId -> { users, adet, isimler, sahip }
 const son = new Map(); // userId -> son çekilişin havuzu (/cekilis-son için)
 
 const sonucEmbed = (s, kullanici) => {
@@ -146,7 +147,7 @@ client.on('interactionCreate', async (i) => {
   if (i.isChatInputCommand() && i.commandName === 'cekilis') {
     const s = { users: [], adet: 5, isimler: [], sahip: i.user.id };
     const res = await i.reply({ ...panel(s), withResponse: true });
-    state.set(res.resource.message.id, s);
+    koy(state, res.resource.message.id, s);
     return;
   }
   if (!i.isMessageComponent() && !i.isModalSubmit()) return;
@@ -158,6 +159,7 @@ client.on('interactionCreate', async (i) => {
       flags: MessageFlags.Ephemeral,
     });
   }
+  koy(state, i.message.id, s); // kullanımda olan panel tazelenir, sıranın sonuna geçer
   if (i.user.id !== s.sahip) {
     return i.reply({
       content: `Bu çekilişi <@${s.sahip}> yönetiyor. Kendi çekilişin için \`/cekilis\` yaz.`,
@@ -191,7 +193,7 @@ client.on('interactionCreate', async (i) => {
         flags: MessageFlags.Ephemeral,
       });
     }
-    son.set(i.user.id, { users: [...s.users], isimler: [...s.isimler], adet: s.adet });
+    koy(son, i.user.id, { users: [...s.users], isimler: [...s.isimler], adet: s.adet });
     // Panel açık kalır: aynı havuzdan tekrar çekmek için yine "Çek"e basılır.
     return i.reply({ embeds: [sonucEmbed(s, i.user)] });
   }

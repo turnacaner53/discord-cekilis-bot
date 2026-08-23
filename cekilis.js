@@ -10,6 +10,17 @@ export function cek(havuz, adet) {
   return a.slice(0, Math.min(adet, a.length));
 }
 
+/**
+ * Map'e yazar ve `limit`i aşarsa en eskisini düşürür (kaba LRU).
+ * Map ekleme sırasını koruduğu için ilk anahtar = en eski.
+ */
+export function koy(m, k, v, limit = 500) {
+  m.delete(k); // yeniden ekleyince sona gider = en taze
+  m.set(k, v);
+  if (m.size > limit) m.delete(m.keys().next().value);
+  return m;
+}
+
 /** Serbest metni isim listesine çevirir; boşları atar, tekrarları teker. */
 export function isimleriAyikla(metin) {
   const s = metin ?? '';
