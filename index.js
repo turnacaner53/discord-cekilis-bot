@@ -14,7 +14,12 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
+import { existsSync } from 'node:fs';
 import { cek, isimleriAyikla, koy } from './cekilis.js';
+
+// Barındırma paneli `node index.js` ile başlatıyor, --env-file bayrağı yok.
+// Panelin env değişkenleri varsa onlar geçerli; yoksa yanındaki .env dosyasından okuruz.
+if (existsSync('.env')) process.loadEnvFile();
 
 const MAX = 25; // Discord'un user select limiti
 const CHIP = 10; // 5 satır sınırı: 2 select + 2 chip satırı + 1 kontrol satırı
