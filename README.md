@@ -27,15 +27,18 @@ Davet linki: Developer Portal → OAuth2 → URL Generator
 
 Bot 7/24 açık olmalı; kapalıyken komutlar "The application did not respond" der.
 
-1. Sunucu (server) oluştur → **Node.js**, sürüm **22 veya üstü**.
-   (`--env-file-if-exists` Node 20.12+ ister.)
-2. `node_modules/`, `.env` ve `bot.log` **hariç** tüm dosyaları yükle.
-3. Panelde environment variable olarak `DISCORD_TOKEN` gir. **`GUILD_ID` girme** — boş
-   bırakılınca komutlar global kaydolur ve botun bulunduğu her sunucuda görünür (yayılması ~1 saat).
-4. Startup command: `npm start`
-5. Başlat, log'da `Hazır: <bot adı> (global)` satırını gör.
+1. Sunucu oluştur → **Node.js**, sürüm **20.12 veya üstü** (`process.loadEnvFile` bu sürümde geldi).
+2. **GitHub** sekmesinden bu repo'yu klonla. İlk kurulumda _Replace all files_, sonraki
+   güncellemelerde **Merge** seç — Replace, repoda olmayan dosyaları siler.
+3. **Env** sekmesi → **+ Add** → `DISCORD_TOKEN` = bot token'ı, mümkünse _secret_ işaretle.
+   **`GUILD_ID` ekleme** — boş kalınca komutlar global kaydolur ve botun ekli olduğu her
+   sunucuda görünür (yayılması ~1 saat).
+4. `STARTUP_FILE` sistem değişkeni `index.js` olmalı; panel `npm install` sonrası
+   `node index.js` çalıştırır. `npm start` kullanılmaz.
+5. Başlat, konsolda `Hazır: <bot adı> (global)` satırını gör.
 
-Token'ı dosya olarak yükleme, panelin env değişkenlerine gir.
+Token'ı repoya **koyma** — repo public. Env sekmesi doğru yer. `.env` dosyası da çalışır
+(kod varsa okur) ama Env değişkeni varsa o öncelikli.
 
 Aynı anda birden fazla kopya çalıştırma — her komuta iki kez cevap verir. Barındırmaya
 geçtikten sonra yereldeki process'i kapat.
@@ -47,9 +50,13 @@ npm install
 npm start
 ```
 
-`.env` içine `DISCORD_TOKEN` ve (isteğe bağlı) `GUILD_ID` koy. `GUILD_ID` verilirse komutlar
-yalnızca o sunucuya kaydolur ve **anında** görünür — global kaydın ~1 saatlik yayılmasını
-beklemeden test etmek için.
+Yerel için **ayrı bir Discord uygulaması** aç (örn. `cekilis-local-bot`) ve token'ını `.env`'e
+koy. Panelle aynı token kullanılırsa ikisi aynı bot olur: hangisinin cevap verdiği anlaşılmaz
+ve ikisi birden açıkken her komuta iki cevap gelir. Ayrı uygulamayla ikisi yan yana çalışır,
+açılış log'undaki isim hangisi olduğunu söyler.
+
+`GUILD_ID` verilirse komutlar yalnızca o sunucuya kaydolur ve **anında** görünür — global
+kaydın ~1 saatlik yayılmasını beklemeden test etmek için.
 
 ```bash
 npm test
