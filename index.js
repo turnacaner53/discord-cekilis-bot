@@ -1,8 +1,18 @@
 import {
-  Client, GatewayIntentBits, EmbedBuilder, MessageFlags,
-  ActionRowBuilder, ButtonBuilder, ButtonStyle,
-  UserSelectMenuBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
-  ModalBuilder, LabelBuilder, TextInputBuilder, TextInputStyle,
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  MessageFlags,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  UserSelectMenuBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ModalBuilder,
+  LabelBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } from 'discord.js';
 import { cek, isimleriAyikla } from './cekilis.js';
 
@@ -20,10 +30,12 @@ const sonucEmbed = (s, kullanici) => {
     .setTitle('🎉 Çekiliş sonucu')
     .setColor(0x5865f2)
     .setDescription(kazananlar.map((u, n) => `**${n + 1}.** ${u}`).join('\n'))
-    .setFooter({ text: `${havuz.length} kişi arasından ${kazananlar.length} kazanan • ${kullanici.tag}` });
+    .setFooter({
+      text: `${havuz.length} kişi arasından ${kazananlar.length} kazanan • ${kullanici.tag}`,
+    });
 };
 
-const chipRows = s =>
+const chipRows = (s) =>
   Array.from({ length: Math.ceil(Math.min(s.isimler.length, CHIP) / 5) }, (_, r) =>
     new ActionRowBuilder().addComponents(
       s.isimler.slice(r * 5, r * 5 + 5).map((ad, k) =>
@@ -31,13 +43,17 @@ const chipRows = s =>
           .setCustomId(`sil:${r * 5 + k}`)
           .setLabel(`${ad.slice(0, 60)} ✕`)
           .setEmoji('👤')
-          .setStyle(ButtonStyle.Secondary)),
-    ));
+          .setStyle(ButtonStyle.Secondary),
+      ),
+    ),
+  );
 
-const panel = s => ({
+const panel = (s) => ({
   content:
     `**Havuz:** ${s.users.length + s.isimler.length} kişi • **Kazanan:** ${s.adet}` +
-    (s.isimler.length > CHIP ? `\n_${s.isimler.length - CHIP} isim daha: ${s.isimler.slice(CHIP).join(', ')}_` : ''),
+    (s.isimler.length > CHIP
+      ? `\n_${s.isimler.length - CHIP} isim daha: ${s.isimler.slice(CHIP).join(', ')}_`
+      : ''),
   components: [
     new ActionRowBuilder().addComponents(
       new UserSelectMenuBuilder()
@@ -45,15 +61,20 @@ const panel = s => ({
         .setPlaceholder('Katılımcıları seç')
         .setMinValues(0)
         .setMaxValues(MAX)
-        .setDefaultUsers(s.users.map(u => u.id)),
+        .setDefaultUsers(s.users.map((u) => u.id)),
     ),
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId('adet')
         .setPlaceholder('Kaç kişi kazanacak?')
-        .setOptions(Array.from({ length: 15 }, (_, n) =>
-          new StringSelectMenuOptionBuilder()
-            .setLabel(`${n + 1} kişi`).setValue(`${n + 1}`).setDefault(n + 1 === s.adet))),
+        .setOptions(
+          Array.from({ length: 15 }, (_, n) =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(`${n + 1} kişi`)
+              .setValue(`${n + 1}`)
+              .setDefault(n + 1 === s.adet),
+          ),
+        ),
     ),
     ...chipRows(s),
     new ActionRowBuilder().addComponents(
@@ -63,26 +84,40 @@ const panel = s => ({
   ],
 });
 
-const isimModal = s => new ModalBuilder()
-  .setCustomId('isimModal')
-  .setTitle('Listede olmayanlar')
-  .addLabelComponents(
-    new LabelBuilder()
-      .setLabel('İsimler')
-      .setDescription('Alt alta, virgülle ya da boşlukla ayır')
-      .setTextInputComponent(
-        new TextInputBuilder()
-          .setCustomId('ekstra')
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(false)
-          .setValue(s.isimler.join('\n')),
-      ),
-  );
+const isimModal = (s) =>
+  new ModalBuilder()
+    .setCustomId('isimModal')
+    .setTitle('Listede olmayanlar')
+    .addLabelComponents(
+      new LabelBuilder()
+        .setLabel('İsimler')
+        .setDescription('Alt alta, virgülle ya da boşlukla ayır')
+        .setTextInputComponent(
+          new TextInputBuilder()
+            .setCustomId('ekstra')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(false)
+            .setValue(s.isimler.join('\n')),
+        ),
+    );
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const UYKU = 2 * 60 * 60 * 1000; // 4 saat işlem olmazsa görünmez
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds],
+  presence: { status: 'invisible' }, // açılışta görünmez; ilk komutla çevrim içi olur
+});
+
+// Bot bağlı kalmak zorunda (komutları gateway'den alıyor), ama görünmesi zorunda değil.
+let zamanlayici;
+const uyan = () => {
+  client.user?.setStatus('online');
+  clearTimeout(zamanlayici);
+  zamanlayici = setTimeout(() => client.user?.setStatus('invisible'), UYKU);
+};
 client.on('error', console.error); // tek bir hatalı etkileşim botu düşürmesin
 
-client.once('clientReady', async c => {
+client.once('clientReady', async (c) => {
   // GUILD_ID varsa komut anında görünür; yoksa global kayıt (yayılması ~1 saat)
   await c.application.commands.set(
     [
@@ -91,14 +126,20 @@ client.once('clientReady', async c => {
     ],
     process.env.GUILD_ID,
   );
-  console.log(`Hazır: ${c.user.tag}${process.env.GUILD_ID ? ` (guild ${process.env.GUILD_ID})` : ' (global)'}`);
+  console.log(
+    `Hazır: ${c.user.tag}${process.env.GUILD_ID ? ` (guild ${process.env.GUILD_ID})` : ' (global)'}`,
+  );
 });
 
-client.on('interactionCreate', async i => {
+client.on('interactionCreate', async (i) => {
+  uyan(); // her etkileşim uyku sayacını sıfırlar
   if (i.isChatInputCommand() && i.commandName === 'cekilis-son') {
     const onceki = son.get(i.user.id);
     if (!onceki) {
-      return i.reply({ content: 'Hatırladığım bir çekilişin yok, `/cekilis` ile başla.', flags: MessageFlags.Ephemeral });
+      return i.reply({
+        content: 'Hatırladığım bir çekilişin yok, `/cekilis` ile başla.',
+        flags: MessageFlags.Ephemeral,
+      });
     }
     return i.reply({ embeds: [sonucEmbed(onceki, i.user)] });
   }
@@ -112,7 +153,10 @@ client.on('interactionCreate', async i => {
 
   const s = state.get(i.message?.id);
   if (!s) {
-    return i.reply({ content: 'Bu panel eskimiş, `/cekilis` ile yeniden aç.', flags: MessageFlags.Ephemeral });
+    return i.reply({
+      content: 'Bu panel eskimiş, `/cekilis` ile yeniden aç.',
+      flags: MessageFlags.Ephemeral,
+    });
   }
   if (i.user.id !== s.sahip) {
     return i.reply({
@@ -142,7 +186,10 @@ client.on('interactionCreate', async i => {
   if (i.isButton() && i.customId === 'cek') {
     const havuz = [...s.users, ...s.isimler];
     if (!havuz.length) {
-      return i.reply({ content: 'Havuz boş: en az bir kişi seç ya da isim ekle.', flags: MessageFlags.Ephemeral });
+      return i.reply({
+        content: 'Havuz boş: en az bir kişi seç ya da isim ekle.',
+        flags: MessageFlags.Ephemeral,
+      });
     }
     son.set(i.user.id, { users: [...s.users], isimler: [...s.isimler], adet: s.adet });
     // Panel açık kalır: aynı havuzdan tekrar çekmek için yine "Çek"e basılır.
