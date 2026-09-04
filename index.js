@@ -64,7 +64,9 @@ const panel = (s) => {
       (s.isimler.length > CHIP
         ? `\n_${s.isimler.length - CHIP} isim daha: ${s.isimler.slice(CHIP).join(', ')}_`
         : '') +
-      (s.uyeler.length ? '' : '\n_Üye listesi alınamadı — "İsim ekle" ile devam edebilirsin._'),
+      (s.uyeler.length
+        ? ''
+        : `\n_${s.sebeb ?? 'Üye listesi alınamadı.'} "İsim ekle" ile devam edebilirsin._`),
     components: [
       // Native "kişi seç" menüsünün sırasını Discord belirliyor; özel sıra tek yol: botun doldurduğu StringSelect.
       ...(s.uyeler.length
@@ -221,6 +223,12 @@ client.on('interactionCreate', async (i) => {
       ).map((m) => ({ id: m.id, ad: m.displayName, sesli: sesliIds.has(m.id) }));
     } catch (e) {
       console.error('üye listesi alınamadı:', e); // panel yine açılır; isimle ekle çalışır
+      // 10004: etkileşim webhook ile yanıtlanabildiği için bot sunucudan silinse bile
+      // komut çalışır sanılır; üye listesi ise bot üyeliği gerektirir.
+      s.sebeb =
+        e.code === 10004
+          ? 'Bot bu sunucunun üyesi değil — üye listesi çekilemez. README\'deki `bot` kapsamlı davet linkiyle botu sunucuya tekrar ekle.'
+          : 'Üye listesi alınamadı.';
     }
     await i.editReply(panel(s));
     const msg = await i.fetchReply(); // deferred yanıtta panelin mesajı
