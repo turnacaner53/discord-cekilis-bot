@@ -7,6 +7,15 @@ dropdown'da o kanalın üyeleri **🔊 ile en üstte** listelenir; sonrası alfa
 
 `/cekilis-son` — son çekilişin havuzuyla panel açmadan yeniden çeker.
 
+## Ayrıcalıklı intent (bir seferlik, uygulama düzeyinde)
+
+Developer Portal → Bot → **Privileged Gateway Intents** → **Server Members Intent: AÇIK**.
+
+Üye listesi gateway chunking ile istenir (Discord toplu üye listesi REST ucunu intent'siz
+403 donuyor). Intent Portal'da açılmazsa bot baglanirken "Used disallowed intents" alir.
+Uygulama sahibi oldugun icin onay gerekmez — anahtari sen acarsin; sunucuya eklenen her kopya
+icin ayrica acilMAZ (uygulama ayaridir).
+
 ## Erişim modeli
 
 Bot **herkese açık değildir**: Developer Portal → Bot → **Public Bot kapalı**. Bu ayarla davet
@@ -23,6 +32,11 @@ Davet linki: Developer Portal → OAuth2 → URL Generator
 - Scope: `bot` + `applications.commands`
 - Permission: **hiçbiri seçme** — komut cevapları interaction token'ıyla gider, botun mesaj
   yazma yetkisine ihtiyacı yok.
+
+⚠️ Portaldaki **Installation → "Uygulamayı Kur"** akışı (yalnız `applications.commands`
+kapsamlı) botu sunucuya **üye yapmaz** — komutlar yine cevaplanır ama üye listesi ve sesli
+kanal özelliği "Unknown Guild" verir. Üye olarak eklemenin tek yolu yukarıdaki URL Generator
+linkidir (`bot` kapsamı).
 
 ## Barındırma (bot-hosting.net)
 

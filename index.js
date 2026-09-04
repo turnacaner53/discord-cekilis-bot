@@ -147,8 +147,15 @@ const isimModal = (s) =>
 const UYKU = 60 * 60 * 1000; // 1 saat işlem olmazsa görünmez
 
 const client = new Client({
-  // GuildVoiceStates (ayrıcalıksız): sesli kanal üyeleri ancak voice state önbelleğiyle bilinir.
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+  // GuildVoiceStates: sesli kanal üyeleri ancak voice state önbelleğiyle bilinir.
+  // GuildMembers (ayrıcalıklı — Portal'da "Server Members Intent" açık olmalı): Discord
+  // toplu üye listesi REST uç noktasını (GET /guilds/{id}/members) intent'siz 403 döndürüyor;
+  // üye listesi bu yüzden gateway chunking ile istenir.
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMembers,
+  ],
   presence: { status: 'invisible' }, // açılışta görünmez; ilk komutla çevrim içi olur
 });
 
@@ -191,8 +198,8 @@ client.on('interactionCreate', async (i) => {
     const s = { users: [], adet: 5, isimler: [], sahip: i.user.id, uyeler: [], sayfa: 0 };
     // Üye listesi botun doldurduğu bir StringSelect'e yazılır (özel sıra tek yol);
     // çekilişi veren sesli kanaldaysa o kanalın üyeleri en üstte, alfabetik yerleşir.
-    // members.fetch() gateway chunking kullanır → GuildMembers (ayrıcalıklı) intent gerektirir;
-    // onun yerine intent'siz çalışan REST listesi 1000'erlik sayfalarla çekilir.
+    // members.fetch() gateway chunking kullanır → Portal'da Server Members Intent şart
+    // (REST toplu liste intent'siz 403 veriyor — 2026 Discord kısıtı).
     await i.deferReply();
     try {
       // i.guild yalnızca gateway önbelleğinden gelir; botun açılışında GUILD_CREATE
@@ -209,14 +216,8 @@ client.on('interactionCreate', async (i) => {
               .map((vs) => vs.id)
           : [],
       );
-      const uyeler = new Map();
-      let after;
-      for (;;) {
-        const dilim = await guild.members.list({ limit: 1000, after, cache: false });
-        for (const [id, m] of dilim) uyeler.set(id, m);
-        if (dilim.size < 1000) break;
-        after = dilim.lastKey();
-      }
+      // intent Portal'da kapalıysa chunk hiç gelmez → 120sn yerine 15sn'de vazgeç, panel notu düşsün
+      const uyeler = await guild.members.fetch({ time: 15_000 });
       s.uyeler = kisiListesi(
         [...uyeler.values()].filter((m) => !m.user.bot),
         sesliIds,
@@ -228,7 +229,7 @@ client.on('interactionCreate', async (i) => {
       s.sebeb =
         e.code === 10004
           ? 'Bot bu sunucunun üyesi değil — üye listesi çekilemez. README\'deki `bot` kapsamlı davet linkiyle botu sunucuya tekrar ekle.'
-          : 'Üye listesi alınamadı.';
+          : 'Üye listesi alınamadı (Portal\'da Server Members Intent kapalı olabilir).';
     }
     await i.editReply(panel(s));
     const msg = await i.fetchReply(); // deferred yanıtta panelin mesajı
