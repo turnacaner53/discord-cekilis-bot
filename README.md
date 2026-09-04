@@ -2,7 +2,8 @@
 
 `/cekilis` — panel açar: katılımcıları seç, listede olmayanları isimle ekle, kazanan sayısını
 seç, **🎲 Çek**'e bas. Sonuç kanalda herkese açık paylaşılır. Panel açık kalır, aynı havuzdan
-tekrar çekebilirsin. Paneli yalnızca açan kişi kullanabilir.
+tekrar çekebilirsin. Paneli yalnızca açan kişi kullanabilir. Çekilişi veren sesli kanaldaysa
+dropdown'da o kanalın üyeleri **🔊 ile en üstte** listelenir; sonrası alfabetik gelir.
 
 `/cekilis-son` — son çekilişin havuzuyla panel açmadan yeniden çeker.
 
@@ -67,7 +68,11 @@ npm test
 - Panel durumu bellekte tutulur; bot yeniden başlarsa açık paneller ölür (`/cekilis` ile
   yeniden açılır). Kalıcı depolama yok, bu bot için gerekmiyor.
 - `state` ve `son` en fazla 500 kayıt tutar, en eskisi düşer (`koy()` / [cekilis.js](cekilis.js)).
-- Bir panelde en fazla 25 kişi seçilebilir (Discord user select limiti); isimle eklemede sınır yok
-  ama ilk 10'u buton olarak, kalanı metin olarak görünür.
+- Katılımcı listesi sayfa başına 25 kişi gösterir (Discord select menü limiti); ◀ / 📄 butonlarıyla
+  sayfa gezilir, toplam seçimde sınır yok. Liste `/cekilis` anındaki üyelerden oluşur —
+  sonradan katılanlar düşer, "İsim ekle" her zaman çalışır.
+- Sesli kanal sıralaması (🔊) için botun o kanalı görme yetkisi olmalı; yoksa liste yalnız
+  alfabetik olur, panel yine çalışır.
+- İsimle eklemede sınır yok ama ilk 10'u buton olarak, kalanı metin olarak görünür.
 - Bot 1 saat işlem görmezse "görünmez" olur — bağlantı sürer, komutlar çalışır, sadece üye
   listesinde görünmez. İlk komutta çevrim içine döner.
