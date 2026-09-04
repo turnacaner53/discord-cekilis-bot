@@ -193,18 +193,24 @@ client.on('interactionCreate', async (i) => {
     // onun yerine intent'siz çalışan REST listesi 1000'erlik sayfalarla çekilir.
     await i.deferReply();
     try {
-      const sesliKanalId = i.member?.voice?.channelId;
+      // i.guild yalnızca gateway önbelleğinden gelir; botun açılışında GUILD_CREATE
+      // henüz ulaşmamışsa null'dır (raw guild) → REST ile çek, sonraki komutlar için cache'lenir.
+      const guild = i.guild ?? (i.guildId ? await client.guilds.fetch(i.guildId) : null);
+      if (!guild) throw new Error('sunucu önbellekte yok ve REST ile alınamadı');
+      // voice state'ler salt gateway verisidir: REST'le gelen guild'de boş olur,
+      // o an 🔊 sıralaması düz alfabetiğe düşer (geçici, sonraki komutta düzelir).
+      const vcId = guild.voiceStates.cache.get(i.user.id)?.channelId ?? null;
       const sesliIds = new Set(
-        sesliKanalId
-          ? [...i.guild.voiceStates.cache.values()]
-              .filter((vs) => vs.channelId === sesliKanalId)
+        vcId
+          ? [...guild.voiceStates.cache.values()]
+              .filter((vs) => vs.channelId === vcId)
               .map((vs) => vs.id)
           : [],
       );
       const uyeler = new Map();
       let after;
       for (;;) {
-        const dilim = await i.guild.members.list({ limit: 1000, after, cache: false });
+        const dilim = await guild.members.list({ limit: 1000, after, cache: false });
         for (const [id, m] of dilim) uyeler.set(id, m);
         if (dilim.size < 1000) break;
         after = dilim.lastKey();
