@@ -265,9 +265,10 @@ client.on('interactionCreate', async (i) => {
         flags: MessageFlags.Ephemeral,
       });
     }
-    // Ephemeral: yalnızca basan kişi görür, oradan kopyalar.
+    // Ephemeral: yalnızca basan kişi görür. Kod bloğu sayesinde mesaja uzun basıp
+    // "Metni Kopyala" deyince panoya yalnızca sonuçlar gider (Ctrl+C eşleniği).
     return i.reply({
-      content: kopyaMetni(r.kazananlar, r.havuz),
+      content: `\`\`\`\n${kopyaMetni(r.kazananlar, r.havuz)}\n\`\`\``,
       flags: MessageFlags.Ephemeral,
     });
   }
