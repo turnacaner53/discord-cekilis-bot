@@ -14,7 +14,7 @@ import {
   TextInputStyle,
 } from 'discord.js';
 import { existsSync } from 'node:fs';
-import { cek, isimleriAyikla, kisiListesi, koy, sayfala, secimGuncelle } from './cekilis.js';
+import { cek, isimleriAyikla, kisiListesi, kopyaMetni, koy, sayfala, secimGuncelle } from './cekilis.js';
 
 // Barındırma paneli `node index.js` ile başlatıyor, --env-file bayrağı yok.
 // Panelin env değişkenleri varsa onlar geçerli; yoksa yanındaki .env dosyasından okuruz.
@@ -26,19 +26,37 @@ const CHIP = 10; // 5 satır sınırı: 2 select + 2 chip satırı + 1 kontrol s
 // ponytail: koy() kaba LRU ile sınırlar (varsayılan 500) — halka açık botta Map'ler sonsuz büyümesin.
 const state = new Map(); // messageId -> { users, adet, isimler, sahip, uyeler, sayfa }
 const son = new Map(); // userId -> son çekilişin havuzu (/cekilis-son için)
+const sonuclar = new Map(); // messageId -> { kazananlar, havuz } — sonuç mesajındaki Kopyala butonu için
 
 const goster = (x) => (typeof x === 'string' ? x : `<@${x.id}>`);
 
-const sonucEmbed = (s, kullanici) => {
-  const havuz = [...s.users, ...s.isimler];
-  const kazananlar = cek(havuz, s.adet);
-  return new EmbedBuilder()
+const sonucEmbed = (kazananlar, havuz, kullanici) =>
+  new EmbedBuilder()
     .setTitle('🎉 Çekiliş sonucu')
     .setColor(0x5865f2)
     .setDescription(kazananlar.map((u, n) => `**${n + 1}.** ${goster(u)}`).join('\n'))
     .setFooter({
       text: `${havuz.length} kişi arasından ${kazananlar.length} kazanan • ${kullanici.tag}`,
     });
+
+// Kazananlar bir kez seçilir: embed ile Kopyala butonu aynı sonucu gösterir.
+const sonucGonder = async (i, s, kullanici) => {
+  const havuz = [...s.users, ...s.isimler];
+  const kazananlar = cek(havuz, s.adet);
+  await i.reply({
+    embeds: [sonucEmbed(kazananlar, havuz, kullanici)],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('kopyala')
+          .setLabel('Kopyala')
+          .setEmoji('📋')
+          .setStyle(ButtonStyle.Secondary),
+      ),
+    ],
+  });
+  const msg = await i.fetchReply();
+  koy(sonuclar, msg.id, { kazananlar, havuz });
 };
 
 const chipRows = (s) =>
@@ -192,7 +210,7 @@ client.on('interactionCreate', async (i) => {
         flags: MessageFlags.Ephemeral,
       });
     }
-    return i.reply({ embeds: [sonucEmbed(onceki, i.user)] });
+    return sonucGonder(i, onceki, i.user);
   }
   if (i.isChatInputCommand() && i.commandName === 'cekilis') {
     const s = { users: [], adet: 5, isimler: [], sahip: i.user.id, uyeler: [], sayfa: 0 };
@@ -237,6 +255,22 @@ client.on('interactionCreate', async (i) => {
     return;
   }
   if (!i.isMessageComponent() && !i.isModalSubmit()) return;
+
+  // Kopyala: sonuç mesajında herkes kullanabilir — panel state'i ve sahip kontrolü devre dışı.
+  if (i.isButton() && i.customId === 'kopyala') {
+    const r = sonuclar.get(i.message?.id);
+    if (!r) {
+      return i.reply({
+        content: 'Bu sonuç eskimiş, çekilişi tekrar yap.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    // Ephemeral: yalnızca basan kişi görür, oradan kopyalar.
+    return i.reply({
+      content: kopyaMetni(r.kazananlar, r.havuz),
+      flags: MessageFlags.Ephemeral,
+    });
+  }
 
   const s = state.get(i.message?.id);
   if (!s) {
@@ -285,7 +319,7 @@ client.on('interactionCreate', async (i) => {
     }
     koy(son, i.user.id, { users: [...s.users], isimler: [...s.isimler], adet: s.adet });
     // Panel açık kalır: aynı havuzdan tekrar çekmek için yine "Çek"e basılır.
-    return i.reply({ embeds: [sonucEmbed(s, i.user)] });
+    return sonucGonder(i, s, i.user);
   }
 });
 

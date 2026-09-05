@@ -59,3 +59,13 @@ export function isimleriAyikla(metin) {
   const ayirici = /[,;\r\n]/.test(s) ? /[,;\r\n]/ : /\s+/;
   return [...new Set(s.split(ayirici).map(x => x.trim()).filter(Boolean))];
 }
+
+/** Kazanan listesini her yere temiz yapışan düz metne çevirir (Kopyala butonu çıktısı). */
+export function kopyaMetni(kazananlar, havuzBoyut) {
+  const ad = (u) => (typeof u === 'string' ? u : u.ad);
+  const satirlar = kazananlar.map((u, n) => `${n + 1}. ${ad(u)}`).join('\n');
+  return (
+    `🎉 Çekiliş sonucu (${havuzBoyut} kişi arasından ${kazananlar.length} kazanan):` +
+    (satirlar ? `\n${satirlar}` : '')
+  );
+}
