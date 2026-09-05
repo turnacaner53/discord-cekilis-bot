@@ -26,7 +26,7 @@ const CHIP = 10; // 5 satır sınırı: 2 select + 2 chip satırı + 1 kontrol s
 // ponytail: koy() kaba LRU ile sınırlar (varsayılan 500) — halka açık botta Map'ler sonsuz büyümesin.
 const state = new Map(); // messageId -> { users, adet, isimler, sahip, uyeler, sayfa }
 const son = new Map(); // userId -> son çekilişin havuzu (/cekilis-son için)
-const sonuclar = new Map(); // messageId -> { kazananlar, havuz } — sonuç mesajındaki Kopyala butonu için
+const sonuclar = new Map(); // messageId -> kazananlar — sonuç mesajındaki Kopyala butonu için
 
 const goster = (x) => (typeof x === 'string' ? x : `<@${x.id}>`);
 
@@ -56,7 +56,7 @@ const sonucGonder = async (i, s, kullanici) => {
     ],
   });
   const msg = await i.fetchReply();
-  koy(sonuclar, msg.id, { kazananlar, havuz });
+  koy(sonuclar, msg.id, kazananlar);
 };
 
 const chipRows = (s) =>
@@ -258,8 +258,8 @@ client.on('interactionCreate', async (i) => {
 
   // Kopyala: sonuç mesajında herkes kullanabilir — panel state'i ve sahip kontrolü devre dışı.
   if (i.isButton() && i.customId === 'kopyala') {
-    const r = sonuclar.get(i.message?.id);
-    if (!r) {
+    const kazananlar = sonuclar.get(i.message?.id);
+    if (!kazananlar) {
       return i.reply({
         content: 'Bu sonuç eskimiş, çekilişi tekrar yap.',
         flags: MessageFlags.Ephemeral,
@@ -268,7 +268,7 @@ client.on('interactionCreate', async (i) => {
     // Ephemeral: yalnızca basan kişi görür. Kod bloğu sayesinde mesaja uzun basıp
     // "Metni Kopyala" deyince panoya yalnızca sonuçlar gider (Ctrl+C eşleniği).
     return i.reply({
-      content: `\`\`\`\n${kopyaMetni(r.kazananlar, r.havuz)}\n\`\`\``,
+      content: `\`\`\`\n${kopyaMetni(r.kazananlar)}\n\`\`\``,
       flags: MessageFlags.Ephemeral,
     });
   }

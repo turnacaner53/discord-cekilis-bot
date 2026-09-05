@@ -61,11 +61,7 @@ export function isimleriAyikla(metin) {
 }
 
 /** Kazanan listesini her yere temiz yapışan düz metne çevirir (Kopyala butonu çıktısı). */
-export function kopyaMetni(kazananlar, havuzBoyut) {
+export function kopyaMetni(kazananlar) {
   const ad = (u) => (typeof u === 'string' ? u : u.ad);
-  const satirlar = kazananlar.map((u, n) => `${n + 1}. ${ad(u)}`).join('\n');
-  return (
-    `🎉 Çekiliş sonucu (${havuzBoyut} kişi arasından ${kazananlar.length} kazanan):` +
-    (satirlar ? `\n${satirlar}` : '')
-  );
+  return kazananlar.map((u, n) => `${n + 1}. ${ad(u)}`).join('\n');
 }
